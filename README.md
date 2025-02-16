@@ -13,3 +13,5 @@ Currently supports:
 - Kraken CSV import 
 - some limited ability to obtain transactions from ETH and BASE chains (add API key to vars.py)
 - can obtain historical price information for some assets from Coingecko (add API key to vars.py)
+
+Made with assistance from AI, including ChatGPT
