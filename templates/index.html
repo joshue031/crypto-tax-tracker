@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>All Transactions</h2>
+
+<!-- View tax year summary -->
+<a href="{{ url_for('summary') }}" class="btn btn-info mb-3">View Gains Summary</a>
+
+<!-- View remaining lots -->
+<a href="{{ url_for('view_lots_collapsed') }}" class="btn btn-info mb-3">View Collapsed Lots</a>
+<!-- <a href="{{ url_for('view_lots') }}" class="btn btn-info mb-3">View Remaining Lots</a> -->
+
+<!-- Calculate gains -->
+<form method="POST" action="{{ url_for('calculate_gains_route') }}" class="form-inline">
+  <label for="tax_year" class="mr-2">Tax Year:</label>
+  <select name="tax_year" id="tax_year" class="form-control mr-2">
+    <option value="">(none)</option>
+    {% for year in range(2015, 2030) %}
+      <option value="{{ year }}">{{ year }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-primary" type="submit">Calculate Gains</button>
+</form>
+
+<!-- Sync Transactions -->
+<form method="POST" action="{{ url_for('sync_transactions') }}">
+    <div class="form-group">
+        <label for="eth_address">Ethereum Address:</label>
+        <input type="text" id="eth_address" name="eth_address" class="form-control" required>
+        <label for="base_address">Base Address:</label>
+        <input type="text" id="base_address" name="base_address" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Sync Transactions</button>
+</form>
+
+<br>
+
+<!-- Add Transaction -->
+<a class="btn btn-success mb-3" href="{{ url_for('add_transaction') }}">Add New Transaction</a>
+
+<!-- Import Kraken CSV Form -->
+<form method="POST" action="{{ url_for('import_kraken') }}" enctype="multipart/form-data" class="mb-4">
+    <label for="kraken_csv" class="form-label">Import Kraken Transactions (CSV):</label>
+    <div class="mb-3">
+        <input type="file" id="kraken_csv" name="kraken_csv" class="form-control" accept=".csv" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Import Transactions</button>
+</form>
+
+<!-- Asset Filter -->
+<form method="get" action="{{ url_for('index') }}" class="form-inline mb-3">
+    <label for="asset" class="mr-2">Filter by Asset:</label>
+    <input type="text" class="form-control mr-2" name="asset" value="{{ asset_filter or '' }}">
+  
+    <label for="chain" class="mr-2">Filter by Chain:</label>
+    <select name="chain" class="form-control mr-2">
+      <option value="">All</option>
+      <option value="EXCH" {% if chain_filter == "EXCH" %}selected{% endif %}>Exchange</option>
+      <option value="ETH" {% if chain_filter == "ETH" %}selected{% endif %}>Ethereum</option>
+      <option value="BASE" {% if chain_filter == "BASE" %}selected{% endif %}>Base</option>
+      <option value="COSMOS" {% if chain_filter == "COSMOS" %}selected{% endif %}>Cosmos</option>
+      <!-- Add other chains as needed -->
+    </select>
+  
+    <button class="btn btn-primary" type="submit">Filter</button>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-sm table-bordered small">
+    <thead>
+      <tr>
+        <th>Error</th>
+        <th>Actions</th>
+        <th>Chain</th>
+        <th>Type</th>
+        <th>From Asset</th>
+        <th>From Amt</th>
+        <th>From Price (USD)</th>
+        <th>To Asset</th>
+        <th>To Amt</th>
+        <th>To CB (USD)</th>
+        <th>Date</th>
+        <th>Tax Yr</th>
+        <th>Gas Fees</th>
+        <th>Gas Price (USD)</th>
+        <th>Gains ST (USD)</th>
+        <th>Gains ST (EUR)</th>
+        <th>Gains LT (USD)</th>
+        <th>Gains LT (EUR)</th>
+        <th>Gas Gains ST (USD)</th>
+        <th>Gas Gains ST (EUR)</th>
+        <th>Gas Gains LT (USD)</th>
+        <th>Gas Gains LT (EUR)</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for tx in transactions %}
+      <tr>
+        <td>{{ tx.error or '--' }}</td>
+        <td>
+          <a class="btn btn-sm btn-warning" href="{{ url_for('edit_transaction', tx_id=tx.id) }}">Edit</a>
+          <form style="display:inline;" method="POST" action="{{ url_for('delete_transaction', tx_id=tx.id) }}">
+            <button class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Del</button>
+          </form>
+          <form style="display:inline;" method="POST" action="{{ url_for('fetch_prices', tx_id=tx.id) }}">
+              <button class="btn btn-sm btn-success" title="Fetch Historical Prices">Price</button>
+          </form>
+        </td>
+        <td>{{ tx.chain or '--' }}</td>
+        <td>{{ tx.transaction_type or '--' }}</td>
+        <td>{{ tx.from_asset or '--' }}</td>
+        <td>{{ tx.from_amount|default('--') if tx.from_amount is none else tx.from_amount|round(2) }}</td>
+        <td>{{ tx.from_asset_price_usd|default('--') if tx.from_asset_price_usd is none else tx.from_asset_price_usd|round(2) }}</td>
+        <td>{{ tx.to_asset or '--' }}</td>
+        <td>{{ tx.to_amount|default('--') if tx.to_amount is none else tx.to_amount|round(2) }}</td>
+        <td>{{ tx.to_asset_cost_basis|default('--') if tx.to_asset_cost_basis is none else tx.to_asset_cost_basis|round(2) }}</td>
+        <td>{{ tx.transaction_date or '--' }}</td>
+        <td>{{ tx.tax_year or '--' }}</td>
+        <td>
+            {{ (tx.gas_fees|default('--') if tx.gas_fees is none else tx.gas_fees|round(4)) }} {{ tx.gas_asset or '--' }}
+        </td>
+        <td>{{ tx.gas_asset_price_usd|default('--') if tx.gas_asset_price_usd is none else tx.gas_asset_price_usd|round(2) }}</td>
+        <td>{{ tx.gains_usd_short|default('--') if tx.gains_usd_short is none else tx.gains_usd_short|round(2) }}</td>
+        <td>{{ tx.gains_eur_short|default('--') if tx.gains_eur_short is none else tx.gains_eur_short|round(2) }}</td>
+        <td>{{ tx.gains_usd_long|default('--') if tx.gains_usd_long is none else tx.gains_usd_long|round(2) }}</td>
+        <td>{{ tx.gains_eur_long|default('--') if tx.gains_eur_long is none else tx.gains_eur_long|round(2) }}</td>
+        <td>{{ tx.gains_gas_usd_short|default('--') if tx.gains_gas_usd_short is none else tx.gains_gas_usd_short|round(2) }}</td>
+        <td>{{ tx.gains_gas_eur_short|default('--') if tx.gains_gas_eur_short is none else tx.gains_gas_eur_short|round(2) }}</td>
+        <td>{{ tx.gains_gas_usd_long|default('--') if tx.gains_gas_usd_long is none else tx.gains_gas_usd_long|round(2) }}</td>
+        <td>{{ tx.gains_gas_eur_long|default('--') if tx.gains_gas_eur_long is none else tx.gains_gas_eur_long|round(2) }}</td>
+        <td>{{ tx.note or '' }}</td>        
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- OLD Transactions Table
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Error</th>
+      <th>Actions</th>
+      <th>Chain</th>
+      <th>Type</th>
+      <th>From Asset</th>
+      <th>From Amount</th>
+      <th>From Price (USD)</th>
+      <th>To Asset</th>
+      <th>To Amount</th>
+      <th>To Cost Basis (USD)</th>
+      <th>Date</th>
+      <th>Tax Year</th>
+      <th>Gas Fees</th>
+      <th>Gas Asset Price (USD)</th>
+      <th>Gains, Short (USD)</th>
+      <th>Gains, Short (EUR)</th>
+      <th>Gains, Long (USD)</th>
+      <th>Gains, Long (EUR)</th>
+      <th>Gas Gains, Short (USD)</th>
+      <th>Gas Gains, Short (EUR)</th>
+      <th>Gas Gains, Long (USD)</th>
+      <th>Gas Gains, Long (EUR)</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for tx in transactions %}
+    <tr>
+      <td>{{ tx.error or '--' }}</td>
+      <td>
+        <a class="btn btn-sm btn-warning" href="{{ url_for('edit_transaction', tx_id=tx.id) }}">Edit</a>
+        <form style="display:inline;" method="POST" action="{{ url_for('delete_transaction', tx_id=tx.id) }}">
+          <button class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+        </form>
+        <form style="display:inline;" method="POST" action="{{ url_for('fetch_prices', tx_id=tx.id) }}">
+            <button class="btn btn-sm btn-success" title="Fetch Historical Prices">
+              Price
+            </button>
+        </form>
+      </td>
+      <td>{{ tx.chain }}</td>
+      <td>{{ tx.transaction_type }}</td>
+      <td>{{ tx.from_asset }}</td>
+      <td>{{ tx.from_amount }}</td>
+      <td>{{ tx.from_asset_price_usd }}</td>
+      <td>{{ tx.to_asset or '--' }}</td>
+      <td>{{ tx.to_amount }}</td>
+      <td>{{ tx.to_asset_cost_basis or '--' }}</td>
+      <td>{{ tx.transaction_date }}</td>
+      <td>{{ tx.tax_year or '--' }}</td>
+      <td>{{ tx.gas_fees }} {{ tx.gas_asset }}</td>
+      <td>{{ tx.gas_asset_price_usd }}</td>
+      <td>{{ tx.gains_usd_short or '--' }}</td>
+      <td>{{ tx.gains_eur_short or '--' }}</td>
+      <td>{{ tx.gains_usd_long or '--' }}</td>
+      <td>{{ tx.gains_eur_long or '--' }}</td>
+      <td>{{ tx.gains_gas_usd_short or '--' }}</td>
+      <td>{{ tx.gains_gas_eur_short or '--' }}</td>
+      <td>{{ tx.gains_gas_usd_long or '--' }}</td>
+      <td>{{ tx.gains_gas_eur_long or '--' }}</td>
+      <td>{{ tx.note or '' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+-->
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Asset Holdings</h2>
+
+<!-- For each asset, display a summary row and a collapsible table of lots -->
+{% for asset, data in holdings.items() %}
+  <!-- Asset Row (summary) -->
+  <div class="card mb-2">
+    <div class="card-header">
+      <span style="font-weight: bold;">Asset: {{ asset }}</span>
+      <span class="ml-3">Total: {{ data.total_amount|round(4) }}</span>
+      <!-- Collapse Toggle Button -->
+      <button class="btn btn-sm btn-link" type="button" data-toggle="collapse" data-target="#collapse-{{ asset }}" aria-expanded="false" aria-controls="collapse-{{ asset }}">
+        Show Lots
+      </button>
+    </div>
+    <!-- Collapsible Detail Section -->
+    <div id="collapse-{{ asset }}" class="collapse">
+      <div class="card-body p-0">
+        <table class="table table-bordered mb-0">
+          <thead>
+            <tr>
+              <th>Transaction Date</th>
+              <th>Remaining Amount</th>
+              <th>Buy Price</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for lot in data.lots %}
+            <tr>
+              <td>{{ lot.transaction_date }}</td>
+              <td>{{ lot.remaining_amount|round(4) }}</td>
+              <td>{{ lot.buy_price|round(4) }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+
+<!-- Bootstrap 4 or 5 JS dependencies (if not already included) -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Remaining Lots</h2>
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Asset</th>
+      <th>Transaction Date</th>
+      <th>Remaining Amount</th>
+      <th>Buy Price</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for lot in lots %}
+    <tr>
+      <td>{{ lot.asset_name }}</td>
+      <td>{{ lot.transaction_date }}</td>
+      <td>{{ lot.remaining_amount }}</td>
+      <td>{{ lot.buy_price }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Gains Summary</h2>
+<table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Tax Year</th>
+        <th>Short Term (USD)</th>
+        <th>Short Term (EUR)</th>
+        <th>Long Term (USD)</th>
+        <th>Long Term (EUR)</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for year, data in summaries %}
+      <tr>
+        <td>{{ year }}</td>
+        <td>{{ data.short_term_usd|round(2) }}</td>
+        <td>{{ data.short_term_eur|round(2) }}</td>
+        <td>{{ data.long_term_usd|round(2) }}</td>
+        <td>{{ data.long_term_eur|round(2) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
